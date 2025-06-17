@@ -1,0 +1,84 @@
+import java.io.IOException;
+
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
+@WebServlet("/solve")
+public class SudokuServlet extends HttpServlet {
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	private static final int N = 9;
+
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+
+        String[] inputs = request.getParameterValues("cell");
+        int[][] grid = new int[N][N];
+
+        // Convert flat input array to 9x9 grid
+        int index = 0;
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < N; j++) {
+                String val = inputs[index++];
+                grid[i][j] = (val == null || val.isEmpty()) ? 0 : Integer.parseInt(val);
+            }
+        }
+
+        response.setContentType("text/html");
+        response.getWriter().println("<html><body>");
+
+        if (solveSudoku(grid)) {
+            response.getWriter().println("<h2>Solved Sudoku:</h2><table border='1'>");
+            for (int i = 0; i < N; i++) {
+                response.getWriter().println("<tr>");
+                for (int j = 0; j < N; j++) {
+                    response.getWriter().println("<td style='padding:10px; text-align:center'>" + grid[i][j] + "</td>");
+                }
+                response.getWriter().println("</tr>");
+            }
+            response.getWriter().println("</table>");
+        } else {
+            response.getWriter().println("<h2>No solution exists.</h2>");
+        }
+
+        response.getWriter().println("</body></html>");
+    }
+
+    private boolean isSafe(int[][] grid, int row, int col, int num) {
+        for (int i = 0; i < N; i++) {
+            if (grid[row][i] == num || grid[i][col] == num)
+                return false;
+        }
+
+        int boxRow = row - row % 3;
+        int boxCol = col - col % 3;
+        for (int i = 0; i < 3; i++)
+            for (int j = 0; j < 3; j++)
+                if (grid[boxRow + i][boxCol + j] == num)
+                    return false;
+
+        return true;
+    }
+
+    private boolean solveSudoku(int[][] grid) {
+        for (int row = 0; row < N; row++) {
+            for (int col = 0; col < N; col++) {
+                if (grid[row][col] == 0) {
+                    for (int num = 1; num <= 9; num++) {
+                        if (isSafe(grid, row, col, num)) {
+                            grid[row][col] = num;
+                            if (solveSudoku(grid)) return true;
+                            grid[row][col] = 0;
+                        }
+                    }
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+}
